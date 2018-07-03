@@ -1,1 +1,1 @@
-# docker-swarm-templates
+# Шаблоны для запуска rails/php приложений в docker/docker-swarm
