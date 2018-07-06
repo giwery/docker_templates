@@ -1,0 +1,21 @@
+version: '2'
+
+networks:
+  service-tier:
+    external: true
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    networks:
+      - service-tier
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/home/ubuntu/app/traefik/traefik.toml:/traefik.toml"
+      - "/home/ubuntu/app/traefik/acme.json:/acme.json"
+
+
