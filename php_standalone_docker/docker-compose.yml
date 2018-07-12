@@ -1,0 +1,59 @@
+version: '2'
+
+networks:
+  service-tier:
+    external: true
+  app:
+
+volumes:
+  dbdata:
+
+services:
+  nginx:
+    restart: always
+    image: nginx:stable
+    container_name: "${PROJECT_NAME}_nginx"
+    networks:
+      - app
+      - service-tier
+    volumes:
+      - "./nginx.conf:/etc/nginx/nginx.conf:ro"
+    ports:
+      - 80:80
+    volumes_from:
+      - app
+    links:
+      - app
+    environment:
+      VIRTUAL_HOST: ${DOMAIN}
+      VIRTUAL_NETWORK: app      
+  db:
+    restart: always
+    image: mysql:5.5
+    container_name: "${PROJECT_NAME}_db"
+    networks:
+      - app
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+  app:
+    restart: always
+    container_name: "${PROJECT_NAME}_app"
+    image: "{$REGISTRY}/${PROJECT_NAME}:latest"
+    links:
+      - db      
+    networks:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_HOST: "${PROJECT_NAME}_db"
+    depends_on:
+      - db
