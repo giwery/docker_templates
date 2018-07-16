@@ -1,0 +1,90 @@
+version: '3'
+
+networks:
+  proxy:
+    external: true
+  app:
+
+volumes:
+  static:
+  dbdata:
+
+services:
+  nginx:
+    image: "${REGISTRY}/${PROJECT_NAME}_nginx:latest"
+    networks:
+      - app
+      - proxy
+    volumes:
+      - "./nginx.conf:/etc/nginx/nginx.conf:ro"
+      - static:/app/public/s/public/upload
+    environment:
+      VIRTUAL_HOST: ${DOMAIN}
+      VIRTUAL_NETWORK: app
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.backend=${PROJECT_NAME}_nginx"
+        - "traefik.frontend.rule=Host:${DOMAIN}"
+        - "traefik.docker.network=proxy"
+        - "traefik.port=80"
+        - "traefik.enable=true"       
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+  db:
+    image: mysql:5.5
+    networks:
+      - app
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
+  app:
+    image: "${REGISTRY}/${PROJECT_NAME}:latest"
+    volumes:
+      - static:/app/public/s/public/upload
+    networks:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_HOST: "${PROJECT_NAME}_db"
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    networks:
+      - app
+      - proxy
+    environment:
+      PMA_HOST: ${MYSQL_HOST}
+      PMA_ABSOLUTE_URI: "http://pma.${DOMAIN}"
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.backend=${PROJECT_NAME}_phpmyadmin"
+        - "traefik.frontend.rule=Host:pma.${DOMAIN}"
+        - "traefik.docker.network=proxy"
+        - "traefik.port=80"
+        - "traefik.enable=true"
+        - "traefik.frontend.headers.SSLRedirect=true"
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
