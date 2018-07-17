@@ -1,0 +1,132 @@
+version: '3'
+
+networks:
+  app:
+  proxy:
+    external:
+      name: proxy
+
+volumes:
+  db-data:
+  redis-data:
+  es-data:
+  export:
+    
+services:
+  app:
+    image: "${REGISTRY}/${PROJECT_NAME}/dev:latest"
+    networks:
+      - app
+    environment:      
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}      
+      RAILS_LOG_TO_STDOUT: "true"
+      JOB_WORKER_URL: ${JOB_WORKER_URL}
+      REDIS_URL: ${REDIS_URL}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    volumes:
+      - /home/deployer/projects/${PROJECT_NAME}/static:/app/static
+      - export:/app/public/export
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
+  nginx:
+    image: nginx:stable
+    networks:
+      - app
+      - proxy
+    volumes:
+      - /home/deployer/projects/${PROJECT_NAME}/static:/static
+      - /home/deployer/projects/${PROJECT_NAME}/nginx.conf:/etc/nginx/nginx.conf  
+      - export:/export  
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.port=80"
+        - "traefik.docker.network=proxy"
+        - "traefik.frontend.rule=Host:${VIRTUAL_HOST}"
+        - "traefik.backend=${PROJECT_NAME}_nginx"
+        - "traefik.frontend.entryPoints=http,https"
+        - "traefik.acme.domains=${VIRTUAL_HOST}"
+        - "traefik.frontend.headers.SSLRedirect=true"
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
+  db:
+    image: postgres:9.6
+    networks:
+      - app
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
+  redis:
+    image: redis:latest
+    networks:
+      - app
+    volumes:
+      - redis-data:/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+  
+  sidekiq:
+    image: "${REGISTRY}/${PROJECT_NAME}/dev:latest"
+    volumes:
+      - /home/deployer/projects/${PROJECT_NAME}/static:/app/public/uploads
+      - export:/app/public/export
+    entrypoint: ./bin/sidekiq.sh
+    networks:
+      - app
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      RAILS_LOG_TO_STDOUT: "true"
+      JOB_WORKER_URL: ${JOB_WORKER_URL}
+      REDIS_URL: ${REDIS_URL}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.3
+    networks:
+      - app
+    volumes:
+      - es-data:/usr/share/elasticsearch/data 
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1000M
+        reservations:
+          cpus: '0.25'
+          memory: 500M
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == ${APP_ENV}
+
