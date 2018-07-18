@@ -11,7 +11,7 @@ defaultEntryPoints = ["https","http"]
     [entryPoints.https.tls]
 
 [acme]
-email = "ig@rademade.com"
+email = "your@email"
 storage = "acme.json"
 entryPoint = "https"
 onHostRule = true
