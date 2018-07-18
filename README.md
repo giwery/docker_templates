@@ -8,7 +8,7 @@
 ## Traefik
 
 Для проксирования приложения в мир мы используем [traefik](https://traefik.io/). Так же это удобный иструмент для получения и обновления SSL сертификатов.
-Для запуска достаточно выполнить команды:
+Для запуска нужно создать файл `acme.json` в котором будут храниться сертификаты. Далее выполнить команду:
 
 ```
 cd traefik && docker-compose up -d
@@ -72,13 +72,39 @@ define('MYSQL_DATABASE', getenv('MYSQL_DATABASE'));
 docker build . -t REGESTRY/PROJECT_NAME
 ```
 
-Далее нужно залогиниться на свой [regestry](https://docs.docker.com/registry/):
+Далее нужно залогиниться на свой [registry](https://docs.docker.com/registry/):
 
 ```
 docker login -u USER -p PASS REGISTRY_DOMAIN
 ```
-Теперь мы можем отправить собраный образ контейнера в ваш registry:
+Теперь отправляем собраный образ контейнера в registry:
 
 ```
 docker push REGESTRY/PROJECT_NAME
 ```
+## Docker swarm
+
+Для запуска приложения в [docker swarm](https://docs.docker.com/engine/swarm/) изначально нужно добавить в окружение переменные из файла `.env`, для этого нужно выполнить команду:
+
+```
+set -a && source .env
+```
+Значение переменной `APP_ENV` должно быть `production` или `staging`. От этого зависит на каком сервере будет запущенно приложение.
+
+Далее мы можем запустить [docker stack](https://docs.docker.com/get-started/part5/#introduction):
+
+```
+docker login -u USER -p PASS REGISTRY_DOMAIN
+docker stack deploy -c docker-cloud.yml --prune --with-registry-auth $PROJECT_NAME
+```
+_NOTE: В swarm кластере не нужно запускать traefik._
+
+## Standalone docker
+
+Для запуска приложения на одном сервере с установленым докером нужно сначала запустить traefik, а далее выполнить команды:
+
+```
+docker login -u USER -p PASS REGISTRY_DOMAIN
+docker-compose up -d
+```
+
