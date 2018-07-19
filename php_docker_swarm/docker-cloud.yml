@@ -28,7 +28,7 @@ services:
         - "traefik.frontend.rule=Host:${DOMAIN}"
         - "traefik.docker.network=proxy"
         - "traefik.port=80"
-        - "traefik.enable=true"       
+        - "traefik.enable=true"
       placement:
         constraints:
           - node.labels.role == ${APP_ENV}

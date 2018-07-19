@@ -32,7 +32,7 @@ services:
       - app
     environment:
       VIRTUAL_HOST: ${VIRTUAL_HOST}
-      VIRTUAL_NETWORK: app      
+      VIRTUAL_NETWORK: app
   app:
     restart: always
     container_name: "${PROJECT_NAME}_app"
@@ -40,14 +40,14 @@ services:
     volumes:
       - uploads:/app/public/uploads
     links:
-      - db      
+      - db
     networks:
       - app
-    environment:     
+    environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_HOST: ${POSTGRES_HOST}
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}      
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       VIRTUAL_HOST: ${VIRTUAL_HOST}
       JOB_WORKER_URL: ${JOB_WORKER_URL}
       SIDEKIQ_ENABLED: "true"
@@ -73,16 +73,16 @@ services:
       - uploads:/app/public/uploads
     entrypoint: ./bin/sidekiq.sh
     links:
-      - db      
+      - db
     networks:
       - app
     depends_on:
-      - db      
+      - db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_HOST: ${POSTGRES_HOST}
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}      
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       VIRTUAL_HOST: ${VIRTUAL_HOST}
       JOB_WORKER_URL: ${JOB_WORKER_URL}
   redis:

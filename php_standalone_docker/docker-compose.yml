@@ -26,7 +26,7 @@ services:
       - app
     environment:
       VIRTUAL_HOST: ${DOMAIN}
-      VIRTUAL_NETWORK: app      
+      VIRTUAL_NETWORK: app
   db:
     restart: always
     image: mysql:5.5
@@ -45,7 +45,7 @@ services:
     container_name: "${PROJECT_NAME}_app"
     image: "{$REGISTRY}/${PROJECT_NAME}:latest"
     links:
-      - db      
+      - db
     networks:
       - app
     environment:
