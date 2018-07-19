@@ -17,8 +17,8 @@ services:
     image: "${REGISTRY}/${PROJECT_NAME}/dev:latest"
     networks:
       - app
-    environment:      
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}      
+    environment:
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       RAILS_LOG_TO_STDOUT: "true"
       JOB_WORKER_URL: ${JOB_WORKER_URL}
       REDIS_URL: ${REDIS_URL}
@@ -42,8 +42,8 @@ services:
       - proxy
     volumes:
       - /home/deployer/projects/${PROJECT_NAME}/static:/static
-      - /home/deployer/projects/${PROJECT_NAME}/nginx.conf:/etc/nginx/nginx.conf  
-      - export:/export  
+      - /home/deployer/projects/${PROJECT_NAME}/nginx.conf:/etc/nginx/nginx.conf
+      - export:/export
     deploy:
       replicas: 1
       labels:
